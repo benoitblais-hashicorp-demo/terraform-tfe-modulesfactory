@@ -58,7 +58,7 @@ jobs:
           echo "INFO     | Module name: ${module_name}"
           echo "INFO     | Run API call to publish a new version."
           {
-            run=$(curl-sS --request POST --url "${tfc_api_url}/organizations/${TFC_ORGANIZATION}/registry-modules/private/${TFC_ORGANIZATION}/${module_name}/${module_provider}/versions" \
+            run=$(curl -sS --request POST --url "${tfc_api_url}/organizations/${TFC_ORGANIZATION}/registry-modules/private/${TFC_ORGANIZATION}/${module_name}/${module_provider}/versions" \
             --header "${auth_header}" --header "${content_header}" --data "${json_payload}")
             if ! [[ "${run}" =~ "{\"data\":" ]]; then
               echo "ERROR    | Unable to published new module version."
@@ -107,4 +107,3 @@ jobs:
           else
             echo "INFO     | Module is not a no-code module. Nothing to do."
           fi
-
