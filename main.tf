@@ -25,7 +25,7 @@ resource "github_repository" "this" {
   license_template                        = var.license_template
   archived                                = var.archived
   archive_on_destroy                      = var.archive_on_destroy
-  topics                                  = concact(["terraform-module", "terraform", "terraform-managed"], var.topics)
+  topics                                  = concat(["terraform-module", "terraform", "terraform-managed"], var.topics)
   vulnerability_alerts                    = var.vulnerability_alerts
   ignore_vulnerability_alerts_during_read = var.ignore_vulnerability_alerts_during_read
   allow_update_branch                     = var.allow_update_branch
