@@ -33,7 +33,7 @@ run "main_passed" {
   command = apply
 
   variables {
-    module_name    = "test"
+    module_name     = "test"
     module_provider = "tfe"
   }
 
