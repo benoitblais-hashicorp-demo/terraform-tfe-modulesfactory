@@ -133,9 +133,26 @@ resource "github_branch_protection" "this" {
   lock_branch          = each.value.lock_branch
 }
 
+# The following code block is use to get information about GitHub team.
+
+data "github_team" "this" {
+  for_each = { for team in var.github_teams : team.name => team }
+  slug     = each.value.name
+}
+
+# The following resource block is used to create and manage team access on the GitHub repository.
+
+resource "github_team_repository" "this" {
+  for_each    = { for team in var.github_teams : team.name => team }
+  repository = github_repository.this.name
+  team_id    = data.github_team.this[each.value.name].id
+  permission = each.value.permission
+}
+
 # The following block is use to get information about an OAuth client.
 
 data "tfe_oauth_client" "client" {
+  count        = var.organization != null && var.oauth_client_name != null ? 1 : 0 
   organization = var.organization
   name         = var.oauth_client_name
 }

@@ -1,13 +1,11 @@
 variable "module_name" {
   description = "(Required) The name the Terraform module."
   type        = string
-  nullable    = false
 }
 
 variable "module_provider" {
   description = "(Required) The main provider the module uses"
   type        = string
-  nullable    = false
 }
 
 variable "allow_auto_merge" {
@@ -62,6 +60,19 @@ variable "delete_branch_on_merge" {
   description = "(Optional) Automatically delete head branch after a pull request is merged."
   type        = bool
   default     = true
+}
+
+variable "github_teams" {
+  description = <<EOT
+  (Optional) The github_teams block supports the following:
+    name        : (Required) The name of the team.
+    permission  : (Optional) The permissions of team members regarding the repository. Must be one of `pull`, `triage`, `push`, `maintain`, `admin` or the name of an existing custom repository role within the organisation.
+  EOT
+  type = list(object({
+    name        = string
+    permission  = optional(string, "pull")
+  }))
+  default = []
 }
 
 variable "gitignore_template" {
@@ -146,18 +157,28 @@ variable "no_code_module" {
   default     = false
 }
 
+# The variable `oauth_client_name` is set to null to avoid having to specify it each time the no-code module is called.
 variable "oauth_client_name" {
   description = "(Optional) Name of the OAuth client."
   type        = string
-  nullable    = false
-  default     = "GitHub"
+  default     = null
+
+  validation {
+    condition     = var.oauth_client_name != null ? true : false 
+    error_message = "`oauth_client_name` must be specefied to be able to publish a module into the private registry."
+  }
 }
 
+# The variable `organization` is set to null to avoid having to specify it each time the no-code module is called.
 variable "organization" {
   description = "(Optional) A description for the project."
   type        = string
-  nullable    = false
-  default     = "benoitblais-hashicorp"
+  default     = null
+
+  validation {
+    condition     = var.organization != null ? true : false 
+    error_message = "`organization` must be specefied to be able to publish a module into the private registry."
+  }
 }
 
 variable "pages" {
