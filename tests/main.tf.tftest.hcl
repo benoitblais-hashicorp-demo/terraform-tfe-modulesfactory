@@ -33,8 +33,8 @@ run "main_passed" {
   command = apply
 
   variables {
-    name                   = "test"
-    provider               = "tfe"
+    name     = "test"
+    provider = "tfe"
   }
 
   assert {
