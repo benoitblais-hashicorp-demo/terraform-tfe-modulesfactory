@@ -70,3 +70,41 @@ jobs:
             echo "ERROR    | Unable to published new module version."
             exit 1
           }
+          echo "INFO     | Get module information."
+          {
+            run=$(curl --request GET --url "${tfc_api_url}/organizations/${TFC_ORGANIZATION}/registry-modules/private/${TFC_ORGANIZATION}/${module_name}/${module_provider}" \
+            --header "${auth_header}" --header "${content_header}")
+            if ! [[ "${run}" =~ "{\"data\":" ]]; then
+              echo "ERROR    | Unable to to get module information."
+              echo "${run}"
+              exit 1
+            fi
+          } ||
+          {
+            echo "ERROR    | Unable to to get module information."
+            exit 1
+          }
+          no_code_id=$(echo "${run}" | jq -r '.data.relationships."no-code-modules".data[].id')
+          if [[ "${no_code_id}" != "null" ]]; then
+            echo "INFO     | No-code module ID: ${no_code_id}"
+            module_id=$(echo "${run}" | jq -r '.data.id')
+            echo "INFO     | Module ID: ${module_id}"
+            json_string='{"data":{"type":"no-code-modules","attributes":{"enabled":true,"version-pin":"'"${version}"'"},"relationships":{"registry-module":{"data":{"id":"'"module_id"'","type":"registry-module"}}}}}'
+            json_payload=$(echo "${json_string}" | jq)
+            {
+              run=$(curl --request PATCH --url "${tfc_api_url}/no-code-modules/${no_code_id}" \
+              --header "${auth_header}" --header "${content_header}" --data "${json_payload}")
+              if ! [[ "${run}" =~ "{\"data\":" ]]; then
+                echo "ERROR    | Unable to update no-code module."
+                echo "${run}"
+                #exit 1
+              fi
+            } ||
+            {
+              echo "ERROR    | Unable to update no-code module."
+              exit 1
+            }
+          else
+            echo "INFO     | Module is not a no-code module. Nothing to do."
+          fi
+
