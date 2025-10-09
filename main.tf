@@ -137,7 +137,7 @@ resource "github_branch_protection" "this" {
 
 resource "github_actions_secret" "tfe_token" {
   count           = var.tfe_token != null ? 1 : 0
-  repository      =  github_repository.this.name
+  repository      = github_repository.this.name
   secret_name     = "TFE_TOKEN"
   plaintext_value = var.tfe_token
 }
