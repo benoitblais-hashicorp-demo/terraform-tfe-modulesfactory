@@ -34,7 +34,7 @@ run "main_passed" {
 
   variables {
     module_name    = "test"
-    moduleprovider = "tfe"
+    module_provider = "tfe"
   }
 
   assert {
