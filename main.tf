@@ -133,6 +133,15 @@ resource "github_branch_protection" "this" {
   lock_branch          = each.value.lock_branch
 }
 
+# The following resource block is used to create and manage an action secret at the repository level.
+
+resource "github_actions_secret" "tfe_token" {
+  count           = var.tfe_token != null ? 1 : 0
+  repository      =  github_repository.this.name
+  secret_name     = "TFE_TOKEN"
+  plaintext_value = var.tfe_token
+}
+
 # The following code block is use to get information about GitHub team.
 
 data "github_team" "this" {

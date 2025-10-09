@@ -287,6 +287,12 @@ variable "template" {
   default = null
 }
 
+variable "tfe_token" {
+  description = "(Optional) The TFE_TOKEN secret value to be created in the GitHub repository to allow the module to publish itself into the private registry."
+  type        = string
+  default     = null
+}
+
 variable "topics" {
   description = "(Optional) The list of topics of the repository."
   type        = list(string)
