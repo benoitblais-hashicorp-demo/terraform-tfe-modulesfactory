@@ -161,4 +161,3 @@ resource "tfe_no_code_module" "this" {
   organization    = var.organization
   registry_module = tfe_registry_module.this.id
 }
-
