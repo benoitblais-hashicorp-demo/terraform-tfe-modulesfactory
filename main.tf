@@ -2,8 +2,8 @@
 
 resource "github_repository" "this" {
 
-  name                                    = "terraform-${var.provider}-${var.name}"
-  description                             = "Terraform module to manage ${element(split("-", var.provider), 1)} resources."
+  name                                    = lover("terraform-${var.module_provider}-${var.module_name}")
+  description                             = "Terraform module to manage ${element(split("-", var.module_provider), 1)} resources."
   homepage_url                            = var.homepage_url
   visibility                              = var.visibility
   has_issues                              = var.has_issues

@@ -7,7 +7,8 @@ provider "tfe" {}
 run "variables" {
 
   variables {
-    name                        = "Test"
+    module_name                 = "Test"
+    module_provider             = "tfe"
     visibility                  = "Public"
     squash_merge_commit_title   = "PR_Title"
     squash_merge_commit_message = null

@@ -1,10 +1,10 @@
-variable "name" {
+variable "module_name" {
   description = "(Required) The name the Terraform module."
   type        = string
   nullable    = false
 }
 
-variable "provider" {
+variable "module_provider" {
   description = "(Required) The main provider the module uses"
   type        = string
   nullable    = false

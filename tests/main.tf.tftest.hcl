@@ -9,8 +9,8 @@ run "main_failed_security_and_analysis" {
   command = plan
 
   variables {
-    name     = "test"
-    provider = "tfe"
+    module_name     = "test"
+    module_provider = "tfe"
     security_and_analysis = {
       advanced_security = {
         status = "enabled"
@@ -33,8 +33,8 @@ run "main_passed" {
   command = apply
 
   variables {
-    name                   = "test"
-    provider               = "tfe"
+    module_name    = "test"
+    moduleprovider = "tfe"
   }
 
   assert {
