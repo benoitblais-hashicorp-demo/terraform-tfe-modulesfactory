@@ -1,8 +1,15 @@
-# This file will contain the required providers for your module.
-# Each Terraform module must declare which providers it requires, so that Terraform
-# can install and use them.
-
 terraform {
+
+  required_providers {
+    github = {
+      source  = "integrations/github"
+      version = "~>6.6"
+    }
+    tfe = {
+      source  = "hashicorp/tfe"
+      version = "~>0.70"
+    }
+  }
 
   required_version = ">= 1.13.0"
 
