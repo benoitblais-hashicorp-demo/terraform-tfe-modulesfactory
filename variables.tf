@@ -69,8 +69,8 @@ variable "github_teams" {
     permission  : (Optional) The permissions of team members regarding the repository. Must be one of `pull`, `triage`, `push`, `maintain`, `admin` or the name of an existing custom repository role within the organisation.
   EOT
   type = list(object({
-    name        = string
-    permission  = optional(string, "pull")
+    name       = string
+    permission = optional(string, "pull")
   }))
   default = []
 }
@@ -164,7 +164,7 @@ variable "oauth_client_name" {
   default     = null
 
   validation {
-    condition     = var.oauth_client_name != null ? true : false 
+    condition     = var.oauth_client_name != null ? true : false
     error_message = "`oauth_client_name` must be specefied to be able to publish a module into the private registry."
   }
 }
@@ -176,7 +176,7 @@ variable "organization" {
   default     = null
 
   validation {
-    condition     = var.organization != null ? true : false 
+    condition     = var.organization != null ? true : false
     error_message = "`organization` must be specefied to be able to publish a module into the private registry."
   }
 }

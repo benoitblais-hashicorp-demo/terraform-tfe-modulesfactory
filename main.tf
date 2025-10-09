@@ -143,7 +143,7 @@ data "github_team" "this" {
 # The following resource block is used to create and manage team access on the GitHub repository.
 
 resource "github_team_repository" "this" {
-  for_each    = { for team in var.github_teams : team.name => team }
+  for_each   = { for team in var.github_teams : team.name => team }
   repository = github_repository.this.name
   team_id    = data.github_team.this[each.value.name].id
   permission = each.value.permission
