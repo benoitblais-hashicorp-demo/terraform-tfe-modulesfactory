@@ -499,6 +499,14 @@ object({
 
 Default: `null`
 
+### <a name="input_tfe_token"></a> [tfe\_token](#input\_tfe\_token)
+
+Description: (Optional) The TFE\_TOKEN secret value to be created in the GitHub repository to allow the module to publish itself into the private registry.
+
+Type: `string`
+
+Default: `null`
+
 ### <a name="input_topics"></a> [topics](#input\_topics)
 
 Description: (Optional) The list of topics of the repository.
@@ -527,6 +535,7 @@ Default: `true`
 
 The following resources are used by this module:
 
+- [github_actions_secret.tfe_token](https://registry.terraform.io/providers/integrations/github/latest/docs/resources/actions_secret) (resource)
 - [github_branch_protection.this](https://registry.terraform.io/providers/integrations/github/latest/docs/resources/branch_protection) (resource)
 - [github_repository.this](https://registry.terraform.io/providers/integrations/github/latest/docs/resources/repository) (resource)
 - [github_team_repository.this](https://registry.terraform.io/providers/integrations/github/latest/docs/resources/team_repository) (resource)
