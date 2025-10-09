@@ -152,7 +152,6 @@ resource "github_team_repository" "this" {
 # The following block is use to get information about an OAuth client.
 
 data "tfe_oauth_client" "client" {
-  count        = var.organization != null && var.oauth_client_name != null ? 1 : 0 
   organization = var.organization
   name         = var.oauth_client_name
 }
