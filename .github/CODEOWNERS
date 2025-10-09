@@ -1,0 +1,11 @@
+# Each line is a file pattern followed by one or more owners.
+
+# @benoitblais-hashicorp-demo/HCPTerraform-ModulesRegistry-Owners owns any files in 
+# the /.github/workflows/ directory at the root of the 
+# repository and any of its subdirectories.
+# This prevent any modification of the GitHub Actions.
+/.github/workflows/ @benoitblais-hashicorp-demo/HCPTerraform-ModulesRegistry-Owners
+
+# To protect a repository fully against unauthorized changes,
+# we also need to define an owner for the CODEOWNERS file itself.
+/.github/CODEOWNERS @benoitblais-hashicorp-demo/HCPTerraform-ModulesRegistry-Owners
