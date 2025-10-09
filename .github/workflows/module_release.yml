@@ -58,7 +58,7 @@ jobs:
           echo "INFO     | Module name: ${module_name}"
           echo "INFO     | Run API call to publish a new version."
           {
-            run=$(curl --request POST --url "${tfc_api_url}/organizations/${TFC_ORGANIZATION}/registry-modules/private/${TFC_ORGANIZATION}/${module_name}/${module_provider}/versions" \
+            run=$(curl-sS --request POST --url "${tfc_api_url}/organizations/${TFC_ORGANIZATION}/registry-modules/private/${TFC_ORGANIZATION}/${module_name}/${module_provider}/versions" \
             --header "${auth_header}" --header "${content_header}" --data "${json_payload}")
             if ! [[ "${run}" =~ "{\"data\":" ]]; then
               echo "ERROR    | Unable to published new module version."
@@ -72,7 +72,7 @@ jobs:
           }
           echo "INFO     | Get module information."
           {
-            run=$(curl --request GET --url "${tfc_api_url}/organizations/${TFC_ORGANIZATION}/registry-modules/private/${TFC_ORGANIZATION}/${module_name}/${module_provider}" \
+            run=$(curl -sS --request GET --url "${tfc_api_url}/organizations/${TFC_ORGANIZATION}/registry-modules/private/${TFC_ORGANIZATION}/${module_name}/${module_provider}" \
             --header "${auth_header}" --header "${content_header}")
             if ! [[ "${run}" =~ "{\"data\":" ]]; then
               echo "ERROR    | Unable to to get module information."
@@ -89,10 +89,10 @@ jobs:
             echo "INFO     | No-code module ID: ${no_code_id}"
             module_id=$(echo "${run}" | jq -r '.data.id')
             echo "INFO     | Module ID: ${module_id}"
-            json_string='{"data":{"type":"no-code-modules","attributes":{"enabled":true,"version-pin":"'"${version}"'"},"relationships":{"registry-module":{"data":{"id":"'"module_id"'","type":"registry-module"}}}}}'
+            json_string='{"data":{"type":"no-code-modules","attributes":{"enabled":true,"version-pin":"'"${version}"'"},"relationships":{"registry-module":{"data":{"id":"'"${module_id}"'","type":"registry-module"}}}}}'
             json_payload=$(echo "${json_string}" | jq)
             {
-              run=$(curl --request PATCH --url "${tfc_api_url}/no-code-modules/${no_code_id}" \
+              run=$(curl -sS --request PATCH --url "${tfc_api_url}/no-code-modules/${no_code_id}" \
               --header "${auth_header}" --header "${content_header}" --data "${json_payload}")
               if ! [[ "${run}" =~ "{\"data\":" ]]; then
                 echo "ERROR    | Unable to update no-code module."
