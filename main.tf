@@ -2,7 +2,7 @@
 
 resource "github_repository" "this" {
 
-  name                                    = lover("terraform-${var.module_provider}-${var.module_name}")
+  name                                    = lower("terraform-${var.module_provider}-${var.module_name}")
   description                             = "Terraform module to manage ${element(split("-", var.module_provider), 1)} resources."
   homepage_url                            = var.homepage_url
   visibility                              = var.visibility
@@ -149,8 +149,8 @@ resource "tfe_registry_module" "this" {
     tests_enabled = true
   }
   vcs_repo {
-    display_identifier = module.modules_factory_repository.full_name
-    identifier         = module.modules_factory_repository.full_name
+    display_identifier = github_repository.this.full_name
+    identifier         = github_repository.this.full_name
     oauth_token_id     = data.tfe_oauth_client.client.oauth_token_id
     branch             = "main"
   }
