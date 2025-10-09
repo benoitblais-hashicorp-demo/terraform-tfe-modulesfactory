@@ -18,16 +18,16 @@ The GitHub provider requires a GitHub token or GitHub App installation in order 
 
 There are several ways to provide the required token:
 
-- Set the `token` argument in the provider configuration. You can set the `token` argument in the provider configuration. Use an
+* Set the `token` argument in the provider configuration. You can set the `token` argument in the provider configuration. Use an
 input variable for the token.
-- Set the `GITHUB_TOKEN` environment variable. The provider can read the `GITHUB_TOKEN` environment variable and the token stored there
+* Set the `GITHUB_TOKEN` environment variable. The provider can read the `GITHUB_TOKEN` environment variable and the token stored there
 to authenticate.
 
 There are several ways to provide the required GitHub App installation:
 
-- Set the `app_auth` argument in the provider configuration. You can set the app\_auth argument with the id, installation\_id and pem\_file
+* Set the `app_auth` argument in the provider configuration. You can set the app\_auth argument with the id, installation\_id and pem\_file
 in the provider configuration. The owner parameter is also required in this situation.
-- Set the `GITHUB_APP_ID`, `GITHUB_APP_INSTALLATION_ID` and `GITHUB_APP_PEM_FILE` environment variables. The provider can read the GITHUB\_APP\_ID,
+* Set the `GITHUB_APP_ID`, `GITHUB_APP_INSTALLATION_ID` and `GITHUB_APP_PEM_FILE` environment variables. The provider can read the GITHUB\_APP\_ID,
 GITHUB\_APP\_INSTALLATION\_ID and GITHUB\_APP\_PEM\_FILE environment variables to authenticate.
 
 > Because strings with new lines is not support:</br>
@@ -36,10 +36,11 @@ GITHUB\_APP\_INSTALLATION\_ID and GITHUB\_APP\_PEM\_FILE environment variables t
 
 ## Features
 
-- Create and manage repositories within your GitHub organization or personal account.
-- Configure branch protection for repositories in your organization or personal account.
+* Create and manage repositories within your GitHub organization or personal account.
+* Configure branch protection for repositories in your organization or personal account.
 
 ## Usage example
+
 ```hcl
 module "repository" {
   source = "./modules/git_repository"
@@ -257,14 +258,6 @@ Description: (Optional) Automatically delete head branch after a pull request is
 Type: `bool`
 
 Default: `true`
-
-### <a name="input_description"></a> [description](#input\_description)
-
-Description: (Optional) A description of the repository.
-
-Type: `string`
-
-Default: `null`
 
 ### <a name="input_gitignore_template"></a> [gitignore\_template](#input\_gitignore\_template)
 
