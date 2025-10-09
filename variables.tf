@@ -64,12 +64,6 @@ variable "delete_branch_on_merge" {
   default     = true
 }
 
-variable "description" {
-  description = "(Optional) A description of the repository."
-  type        = string
-  default     = null
-}
-
 variable "gitignore_template" {
   description = "(Optional) Use the name of the template without the extension. For example, \"Haskell\"."
   type        = string
