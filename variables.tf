@@ -171,7 +171,7 @@ variable "oauth_client_name" {
 
 # The variable `organization` is set to null to avoid having to specify it each time the no-code module is called.
 variable "organization" {
-  description = "(Optional) A description for the project."
+  description = "(Optional) HCP Terraform organization name."
   type        = string
   default     = null
 
