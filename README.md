@@ -395,7 +395,7 @@ Default: `null`
 
 ### <a name="input_organization"></a> [organization](#input\_organization)
 
-Description: (Optional) A description for the project.
+Description: (Optional) HCP Terraform organization name.
 
 Type: `string`
 
