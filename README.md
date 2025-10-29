@@ -83,7 +83,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.13.0)
 
-- <a name="requirement_github"></a> [github](#requirement\_github) (~>6.6)
+- <a name="requirement_github"></a> [github](#requirement\_github) (~>6.6.0)
 
 - <a name="requirement_tfe"></a> [tfe](#requirement\_tfe) (~>0.70)
 
@@ -395,7 +395,7 @@ Default: `null`
 
 ### <a name="input_organization"></a> [organization](#input\_organization)
 
-Description: (Optional) A description for the project.
+Description: (Optional) HCP Terraform organization name.
 
 Type: `string`
 
