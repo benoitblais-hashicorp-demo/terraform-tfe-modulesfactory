@@ -16,8 +16,8 @@ appropriate permissions. It should have:
 
 ### HCP Terraform Permissions
 
-To manage the agent pool resources, provide a user token from an account with
-appropriate permissions. This user should have the `Manage modules` permission.
+To manage resources, provide a user token from an account with appropriate
+permissions. This user should have the `Manage modules` permission.
 Alternatively, you can use a token from a team instead of a user token.
 
 ## Authentication
