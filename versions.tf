@@ -3,11 +3,11 @@ terraform {
   required_providers {
     github = {
       source  = "integrations/github"
-      version = "~>6.6.0"
+      version = "~> 6.11.0"
     }
     tfe = {
       source  = "hashicorp/tfe"
-      version = "~>0.70"
+      version = "~> 0.70"
     }
   }
 
