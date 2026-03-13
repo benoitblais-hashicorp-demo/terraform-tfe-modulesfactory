@@ -83,9 +83,9 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.13.0)
 
-- <a name="requirement_github"></a> [github](#requirement\_github) (~>6.6.0)
+- <a name="requirement_github"></a> [github](#requirement\_github) (~> 6.11.0)
 
-- <a name="requirement_tfe"></a> [tfe](#requirement\_tfe) (~>0.70)
+- <a name="requirement_tfe"></a> [tfe](#requirement\_tfe) (~> 0.74)
 
 ## Modules
 
