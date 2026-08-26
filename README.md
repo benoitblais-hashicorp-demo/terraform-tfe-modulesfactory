@@ -2,17 +2,17 @@
 # Modules Factory Terraform Module
 
 Modules Factory module which manages configuration and life-cycle
-of your Terraform modules.
+of your Terraform modules using Azure DevOps as the VCS provider.
 
 ## Permissions
 
-### GitHub Permissions
+### Azure DevOps Permissions
 
-To manage the GitHub resources, provide a token from an account or a GitHub App with
-appropriate permissions. It should have:
+To manage Azure DevOps resources, provide a Personal Access Token (PAT) from an account
+with appropriate permissions on the target project. The PAT should have:
 
-* Read access to `metadata`
-* Read and write access to `administration`, `code`, and `secrets`
+* **Code** — Read & Write (to create and manage Git repositories)
+* **Project and Team** — Read (to look up the project UUID)
 
 ### HCP Terraform Permissions
 
@@ -22,27 +22,23 @@ Alternatively, you can use a token from a team instead of a user token.
 
 ## Authentication
 
-### GitHub Authentication
+### Azure DevOps Authentication
 
-The GitHub provider requires a GitHub token or GitHub App installation in order to manage resources.
+The Azure DevOps provider requires a Personal Access Token (PAT) to manage resources.
 
 There are several ways to provide the required token:
 
-* Set the `token` argument in the provider configuration. You can set the `token` argument in the provider configuration. Use an
-input variable for the token.
-* Set the `GITHUB_TOKEN` environment variable. The provider can read the `GITHUB_TOKEN` environment variable and the token stored there
-to authenticate.
+* Set the `personal_access_token` argument via the `azuredevops_personal_access_token`
+  input variable in the module call.
+* Set the `AZDO_PERSONAL_ACCESS_TOKEN` environment variable. The provider reads this
+  variable automatically, so the input variable can be omitted when it is set.
 
-There are several ways to provide the required GitHub App installation:
+The organization service URL is constructed automatically from the
+`azuredevops_service_url` and `azuredevops_organization` input variables:
 
-* Set the `app_auth` argument in the provider configuration. You can set the app\_auth argument with the id, installation\_id and pem\_file
-in the provider configuration. The owner parameter is also required in this situation.
-* Set the `GITHUB_APP_ID`, `GITHUB_APP_INSTALLATION_ID` and `GITHUB_APP_PEM_FILE` environment variables. The provider can read the GITHUB\_APP\_ID,
-GITHUB\_APP\_INSTALLATION\_ID and GITHUB\_APP\_PEM\_FILE environment variables to authenticate.
-
-> Because strings with new lines is not support:</br>
-> use "\\\n" within the `pem_file` argument to replace new line</br>
-> use "\n" within the `GITHUB_APP_PEM_FILE` environment variables to replace new line</br>
+```
+https://dev.azure.com/<azuredevops_organization>
+```
 
 ### HCP Terraform Authentication
 
@@ -51,27 +47,39 @@ order to manage resources.
 
 There are several ways to provide the required token:
 
-* Set the `token` argument in the provider configuration. You can set the token argument in the provider configuration. Use an
-input variable for the token.
-* Set the `TFE_TOKEN` environment variable. The provider can read the TFE\_TOKEN environment variable and the token stored there
-to authenticate.
+* Set the `tfe_token` input variable in the module call.
+* Set the `TFE_TOKEN` environment variable. The provider reads the `TFE_TOKEN`
+  environment variable and the token stored there to authenticate.
 
 ## Features
 
-* Create and manage repositories within your GitHub organization or personal account for your Terraform modules.
-  * Configure branch protection.
-  * Configure teams access.
-* Publish module inside the private registry of your HCP Terraform organization.
-  * Enable no-code feature when specified.
+* Create and manage Git repositories within your Azure DevOps project for your Terraform modules.
+  * Configure branch policies (minimum reviewers, comment resolution, merge strategies, auto-reviewers).
+* Publish the module inside the private registry of your HCP Terraform organization.
+  * Enable the no-code feature when specified.
+* Automatically provision `tfe_test_variable` resources so that HCP Terraform module tests
+  have access to the required Azure DevOps credentials.
 
 ## Usage example
 
 ```hcl
-module "repository" {
+module "modulesfactory" {
   source  = "app.terraform.io/<organization>/modulesfactory/tfe"
   version = "0.0.0"
-  module_name     = "test"
-  module_provider = "tfe"
+
+  # Identity of the module to publish
+  module_name     = "storage-account"
+  module_provider = "azurerm"
+
+  # Azure DevOps VCS connection
+  azuredevops_organization          = "my-ado-org"
+  azuredevops_project_name          = "My ADO Project"
+  azuredevops_personal_access_token = var.ado_pat   # or use AZDO_PERSONAL_ACCESS_TOKEN env var
+
+  # HCP Terraform
+  organization       = "my-hcp-org"
+  oauth_client_name  = "AzureDevOps"
+  tfe_token          = var.tfe_token                 # or use TFE_TOKEN env var
 }
 ```
 
@@ -83,13 +91,19 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.13.0)
 
-- <a name="requirement_github"></a> [github](#requirement\_github) (~>6.6.0)
+- <a name="requirement_azuredevops"></a> [azuredevops](#requirement\_azuredevops) (~> 1.16)
 
-- <a name="requirement_tfe"></a> [tfe](#requirement\_tfe) (~>0.70)
+- <a name="requirement_tfe"></a> [tfe](#requirement\_tfe) (~> 0.79)
 
 ## Modules
 
-No modules.
+The following modules are called by this module:
+
+### <a name="module_repository"></a> [repository](#module\_repository)
+
+Source: `./modules/azuredevops_repository`
+
+Creates and configures the Azure DevOps Git repository and its branch policies.
 
 ## Required Inputs
 
@@ -97,13 +111,49 @@ The following input variables are required:
 
 ### <a name="input_module_name"></a> [module\_name](#input\_module\_name)
 
-Description: (Required) The name the Terraform module.
+Description: (Required) The name of the Terraform module.
 
 Type: `string`
 
 ### <a name="input_module_provider"></a> [module\_provider](#input\_module\_provider)
 
-Description: (Required) The main provider the module uses
+Description: (Required) The main provider the module uses (e.g., `azurerm`, `aws`).
+
+Type: `string`
+
+### <a name="input_azuredevops_organization"></a> [azuredevops\_organization](#input\_azuredevops\_organization)
+
+Description: (Required) The name of the Azure DevOps organization (the segment after `dev.azure.com/` in the URL).
+
+Type: `string`
+
+### <a name="input_azuredevops_personal_access_token"></a> [azuredevops\_personal\_access\_token](#input\_azuredevops\_personal\_access\_token)
+
+Description: (Required) The Azure DevOps Personal Access Token used to authenticate. Can also be set via the `AZDO_PERSONAL_ACCESS_TOKEN` environment variable.
+
+Type: `string` (sensitive)
+
+### <a name="input_azuredevops_project_name"></a> [azuredevops\_project\_name](#input\_azuredevops\_project\_name)
+
+Description: (Required) The name of the Azure DevOps project in which the repository will be created.
+
+Type: `string`
+
+### <a name="input_organization"></a> [organization](#input\_organization)
+
+Description: (Required) HCP Terraform organization name.
+
+Type: `string`
+
+### <a name="input_tfe_token"></a> [tfe\_token](#input\_tfe\_token)
+
+Description: (Required) HCP Terraform API token used by child workspaces to publish modules into the private registry.
+
+Type: `string` (sensitive)
+
+### <a name="input_oauth_client_name"></a> [oauth\_client\_name](#input\_oauth\_client\_name)
+
+Description: (Required) Name of the OAuth client connecting HCP Terraform to Azure DevOps.
 
 Type: `string`
 
@@ -111,271 +161,46 @@ Type: `string`
 
 The following input variables are optional (have default values):
 
-### <a name="input_allow_auto_merge"></a> [allow\_auto\_merge](#input\_allow\_auto\_merge)
+### <a name="input_azuredevops_service_url"></a> [azuredevops\_service\_url](#input\_azuredevops\_service\_url)
 
-Description: (Optional) Set to true to allow auto-merging pull requests on the repository.
+Description: (Optional) The base URL of the Azure DevOps service. Defaults to `https://dev.azure.com`.
 
-Type: `bool`
+Type: `string`
 
-Default: `false`
+Default: `"https://dev.azure.com"`
 
-### <a name="input_allow_merge_commit"></a> [allow\_merge\_commit](#input\_allow\_merge\_commit)
+### <a name="input_default_branch"></a> [default\_branch](#input\_default\_branch)
 
-Description: (Optional) Set to false to disable merge commits on the repository.
+Description: (Optional) The short name of the default branch (without the `refs/heads/` prefix). Defaults to `main`.
 
-Type: `bool`
+Type: `string`
 
-Default: `true`
+Default: `"main"`
 
-### <a name="input_allow_rebase_merge"></a> [allow\_rebase\_merge](#input\_allow\_rebase\_merge)
+### <a name="input_disabled"></a> [disabled](#input\_disabled)
 
-Description: (Optional) Set to false to disable rebase merges on the repository.
-
-Type: `bool`
-
-Default: `true`
-
-### <a name="input_allow_squash_merge"></a> [allow\_squash\_merge](#input\_allow\_squash\_merge)
-
-Description: (Optional) Set to false to disable squash merges on the repository.
-
-Type: `bool`
-
-Default: `true`
-
-### <a name="input_allow_update_branch"></a> [allow\_update\_branch](#input\_allow\_update\_branch)
-
-Description: (Optional) Set to true to always suggest updating pull request branches.
+Description: (Optional) Whether the repository is disabled. Defaults to `false`.
 
 Type: `bool`
 
 Default: `false`
 
-### <a name="input_archive_on_destroy"></a> [archive\_on\_destroy](#input\_archive\_on\_destroy)
+### <a name="input_initialization"></a> [initialization](#input\_initialization)
 
-Description: (Optional) Set to true to archive the repository instead of deleting on destroy.
-
-Type: `bool`
-
-Default: `false`
-
-### <a name="input_archived"></a> [archived](#input\_archived)
-
-Description: (Optional) Specifies if the repository should be archived. NOTE Currently, the API does not support unarchiving.
-
-Type: `bool`
-
-Default: `false`
-
-### <a name="input_auto_init"></a> [auto\_init](#input\_auto\_init)
-
-Description: (Optional) Set to true to produce an initial commit in the repository.
-
-Type: `bool`
-
-Default: `true`
-
-### <a name="input_branch_protections"></a> [branch\_protections](#input\_branch\_protections)
-
-Description:     pattern                           : (Required) Identifies the protection rule pattern.  
-    enforce\_admins                    : (Optional) Boolean, setting this to true enforces status checks for repository administrators.  
-    require\_signed\_commits            : (Optional) Boolean, setting this to true requires all commits to be signed with GPG.  
-    required\_linear\_history           : (Optional) Boolean, setting this to true enforces a linear commit Git history, which prevents anyone from pushing merge commits to a branch.  
-    require\_conversation\_resolution   : (Optional) Boolean, setting this to true requires all conversations on code must be resolved before a pull request can be merged.  
-    required\_status\_checks            : (Optional) The required\_status\_checks block supports the following:  
-      strict                          : (Optional) Require branches to be up to date before merging.  
-      contexts                        : (Optional) The list of status checks to require in order to merge into this branch. No status checks are required by default.  
-    required\_pull\_request\_reviews     : (Optional) The required\_pull\_request\_reviews block supports the following:  
-      dismiss\_stale\_reviews           : (Optional) Dismiss approved reviews automatically when a new commit is pushed.  
-      restrict\_dismissals             : (Optional) Restrict pull request review dismissals.  
-      dismissal\_restrictions          : (Optional) The list of actor Names/IDs with dismissal access. If not empty, restrict\_dismissals is ignored. Actor names must either begin with a \"/\" for users or the organization name followed by a \"/\" for teams.  
-      pull\_request\_bypassers          : (Optional) The list of actor Names/IDs that are allowed to bypass pull request requirements. Actor names must either begin with a \"/\" for users or the organization name followed by a \"/\" for teams.  
-      require\_code\_owner\_reviews      : (Optional) Require an approved review in pull requests including files with a designated code owner.  
-      required\_approving\_review\_count : (Optional) Require x number of approvals to satisfy branch protection requirements. If this is specified it must be a number between 0-6.  
-      require\_last\_push\_approval      : (Optional) Require that The most recent push must be approved by someone other than the last pusher.  
-    restrict\_pushes                   : (Optional) The restrict\_pushes block supports the following:  
-      blocks\_creations                : (Optional) Optional) Boolean, setting this to `false` allows people, teams, or apps to create new branches matching this rule.  
-      push\_allowances                 : (Optional) The list of actor Names/IDs that may push to the branch. Actor names must either begin with a \"/\" for users or the organization name followed by a \"/\" for teams.  
-    force\_push\_bypassers              : (Optional) The list of actor Names/IDs that are allowed to bypass force push restrictions. Actor names must either begin with a \"/\" for users or the organization name followed by a \"/\" for teams.  
-    allows\_deletions                  : (Optional) Boolean, setting this to true to allow the branch to be deleted.  
-    allows\_force\_pushes               : (Optional) Boolean, setting this to true to allow force pushes on the branch.  
-    lock\_branch                       : (Optional) Boolean, Setting this to true will make the branch read-only and preventing any pushes to it.
+Description: (Optional) Repository initialization configuration.
+  - `init_type` : How to initialize the repository. Valid values: `Clean`, `Uninitialized`, `Import`.
+  - `source_url`: URL of the source Git repository when `init_type` is `Import`.
 
 Type:
 
 ```hcl
-list(object({
-    pattern                         = string
-    enforce_admins                  = optional(bool, false)
-    require_signed_commits          = optional(bool, false)
-    required_linear_history         = optional(bool, false)
-    require_conversation_resolution = optional(bool, false)
-    required_status_checks = optional(object({
-      strict   = optional(bool, false)
-      contexts = optional(list(string), [])
-    }), null)
-    required_pull_request_reviews = optional(object({
-      dismiss_stale_reviews           = optional(bool, false)
-      restrict_dismissals             = optional(bool, false)
-      dismissal_restrictions          = optional(list(string), [])
-      pull_request_bypassers          = optional(list(string), [])
-      require_code_owner_reviews      = optional(bool, false)
-      required_approving_review_count = optional(string, null)
-      require_last_push_approval      = optional(bool, false)
-    }), null)
-    restrict_pushes = optional(object({
-      blocks_creations = optional(bool, false)
-      push_allowances  = optional(list(string), [])
-    }))
-    force_push_bypassers = optional(list(string), [])
-    allows_deletions     = optional(bool, false)
-    allows_force_pushes  = optional(bool, false)
-    lock_branch          = optional(bool, false)
-  }))
+object({
+  init_type  = string
+  source_url = optional(string, null)
+})
 ```
 
-Default:
-
-```json
-[
-  {
-    "allows_deletions": false,
-    "allows_force_pushes": false,
-    "blocks_creations": false,
-    "enforce_admins": true,
-    "force_push_bypassers": null,
-    "lock_branch": false,
-    "pattern": "main",
-    "push_restrictions": null,
-    "require_conversation_resolution": true,
-    "require_signed_commits": false,
-    "required_linear_history": false,
-    "required_pull_request_reviews": {
-      "dismiss_stale_reviews": true,
-      "dismissal_restrictions": null,
-      "pull_request_bypassers": null,
-      "require_code_owner_reviews": true,
-      "require_last_push_approval": false,
-      "required_approving_review_count": "0",
-      "restrict_dismissals": null
-    },
-    "required_status_checks": null
-  }
-]
-```
-
-### <a name="input_delete_branch_on_merge"></a> [delete\_branch\_on\_merge](#input\_delete\_branch\_on\_merge)
-
-Description: (Optional) Automatically delete head branch after a pull request is merged.
-
-Type: `bool`
-
-Default: `true`
-
-### <a name="input_github_teams"></a> [github\_teams](#input\_github\_teams)
-
-Description:   (Optional) The github\_teams block supports the following:  
-    name        : (Required) The name of the team.  
-    permission  : (Optional) The permissions of team members regarding the repository. Must be one of `pull`, `triage`, `push`, `maintain`, `admin` or the name of an existing custom repository role within the organisation.
-
-Type:
-
-```hcl
-list(object({
-    name       = string
-    permission = optional(string, "pull")
-  }))
-```
-
-Default: `[]`
-
-### <a name="input_gitignore_template"></a> [gitignore\_template](#input\_gitignore\_template)
-
-Description: (Optional) Use the name of the template without the extension. For example, "Haskell".
-
-Type: `string`
-
-Default: `null`
-
-### <a name="input_has_discussions"></a> [has\_discussions](#input\_has\_discussions)
-
-Description: (Optional) Set to true to enable GitHub Discussions on the repository.
-
-Type: `bool`
-
-Default: `false`
-
-### <a name="input_has_issues"></a> [has\_issues](#input\_has\_issues)
-
-Description: (Optional) Set to true to enable the GitHub Issues features on the repository.
-
-Type: `bool`
-
-Default: `true`
-
-### <a name="input_has_projects"></a> [has\_projects](#input\_has\_projects)
-
-Description: (Optional) Set to true to enable the GitHub Projects features on the repository. Per the GitHub documentation when in an organization that has disabled repository projects it will default to false and will otherwise default to true. If you specify true when it has been disabled it will return an error.
-
-Type: `bool`
-
-Default: `true`
-
-### <a name="input_has_wiki"></a> [has\_wiki](#input\_has\_wiki)
-
-Description: (Optional) Set to true to enable the GitHub Wiki features on the repository.
-
-Type: `bool`
-
-Default: `true`
-
-### <a name="input_homepage_url"></a> [homepage\_url](#input\_homepage\_url)
-
-Description: (Optional) URL of a page describing the project.
-
-Type: `string`
-
-Default: `null`
-
-### <a name="input_ignore_vulnerability_alerts_during_read"></a> [ignore\_vulnerability\_alerts\_during\_read](#input\_ignore\_vulnerability\_alerts\_during\_read)
-
-Description: (Optional) Set to true to not call the vulnerability alerts endpoint so the resource can also be used without admin permissions during read.
-
-Type: `bool`
-
-Default: `false`
-
-### <a name="input_is_template"></a> [is\_template](#input\_is\_template)
-
-Description: (Optional) Set to true to tell GitHub that this is a template repository.
-
-Type: `bool`
-
-Default: `false`
-
-### <a name="input_license_template"></a> [license\_template](#input\_license\_template)
-
-Description: (Optional) Use the name of the template without the extension. For example, "mit" or "mpl-2.0".
-
-Type: `string`
-
-Default: `null`
-
-### <a name="input_merge_commit_message"></a> [merge\_commit\_message](#input\_merge\_commit\_message)
-
-Description: Can be PR\_BODY, PR\_TITLE, or BLANK for a default merge commit message. Applicable only if allow\_merge\_commit is true.
-
-Type: `string`
-
-Default: `"PR_TITLE"`
-
-### <a name="input_merge_commit_title"></a> [merge\_commit\_title](#input\_merge\_commit\_title)
-
-Description: Can be PR\_TITLE or MERGE\_MESSAGE for a default merge commit title. Applicable only if allow\_merge\_commit is true.
-
-Type: `string`
-
-Default: `"MERGE_MESSAGE"`
+Default: `{ init_type = "Clean" }`
 
 ### <a name="input_no_code_module"></a> [no\_code\_module](#input\_no\_code\_module)
 
@@ -385,203 +210,103 @@ Type: `bool`
 
 Default: `false`
 
-### <a name="input_oauth_client_name"></a> [oauth\_client\_name](#input\_oauth\_client\_name)
+### <a name="input_branch_policies"></a> [branch\_policies](#input\_branch\_policies)
 
-Description: (Optional) Name of the OAuth client.
-
-Type: `string`
-
-Default: `null`
-
-### <a name="input_organization"></a> [organization](#input\_organization)
-
-Description: (Optional) HCP Terraform organization name.
-
-Type: `string`
-
-Default: `null`
-
-### <a name="input_pages"></a> [pages](#input\_pages)
-
-Description:   (Optional) The pages block supports the following:  
-    source     : (Optional) The source block supports the following:  
-      branch   : (Required) The repository branch used to publish the site's source files. (i.e. main or gh-pages.  
-      path     : (Optional) The repository directory from which the site publishes (Default: /).  
-    build\_type : (Optional) The type of GitHub Pages site to build. Can be legacy or workflow. If you use legacy as build type you need to set the option source.  
-    cname      : (Optional) The custom domain for the repository. This can only be set after the repository has been created.
+Description: (Optional) List of branch policy configurations to apply to the repository. Each entry supports: `branch_ref`, `match_type` (`Exact`/`Prefix`/`DefaultBranch`), `enabled`, `blocking`, `require_comment_resolution`, `min_reviewers`, `merge_types`, and `auto_reviewers`.
 
 Type:
 
 ```hcl
-object({
-    source = optional(object({
-      branch = string
-      path   = optional(string, "/")
-    }))
-    build_type = optional(string, null)
-    cname      = optional(string, null)
-  })
+list(object({
+  branch_ref                 = string
+  match_type                 = optional(string, "Exact")
+  enabled                    = optional(bool, true)
+  blocking                   = optional(bool, true)
+  require_comment_resolution = optional(bool, false)
+  min_reviewers = optional(object({
+    reviewer_count                         = number
+    submitter_can_vote                     = optional(bool, false)
+    last_pusher_cannot_approve             = optional(bool, true)
+    allow_completion_with_rejects_or_waits = optional(bool, false)
+    on_push_reset_approved_votes           = optional(bool, true)
+    on_push_reset_all_votes                = optional(bool, false)
+  }), null)
+  merge_types = optional(object({
+    allow_squash                  = optional(bool, true)
+    allow_rebase_and_fast_forward = optional(bool, false)
+    allow_basic_no_fast_forward   = optional(bool, true)
+    allow_rebase_with_merge       = optional(bool, false)
+  }), null)
+  auto_reviewers = optional(object({
+    reviewer_ids       = list(string)
+    submitter_can_vote = optional(bool, false)
+    message            = optional(string, null)
+    path_filters       = optional(list(string), [])
+  }), null)
+}))
 ```
 
-Default: `null`
-
-### <a name="input_security_and_analysis"></a> [security\_and\_analysis](#input\_security\_and\_analysis)
-
-Description:   (Optional) The security\_and\_analysis block supports the following:  
-    advanced\_security               : (Optional) The advanced\_security block supports the following:  
-      status                        : (Required) Set to enabled to enable advanced security features on the repository. Can be enabled or disabled.  
-    secret\_scanning                 : (Optional) The secret\_scanning block supports the following:  
-      status                        : (Required) Set to enabled to enable secret scanning on the repository. Can be enabled or disabled. If set to enabled, the repository's visibility must be public or security\_and\_analysis[0].advanced\_security[0].status must also be set to enabled.  
-    secret\_scanning\_push\_protection : (Optional) The secret\_scanning block supports the following:  
-      status                        : (Required) Set to enabled to enable secret scanning push protection on the repository. Can be enabled or disabled. If set to enabled, the repository's visibility must be public or security\_and\_analysis[0].advanced\_security[0].status must also be set to enabled.
-
-Type:
-
-```hcl
-object({
-    advanced_security = optional(object({
-      status = string
-    }), null)
-    secret_scanning = optional(object({
-      status = string
-    }), null)
-    secret_scanning_push_protection = optional(object({
-      status = string
-    }), null)
-  })
-```
-
-Default:
-
-```json
-{
-  "secret_scanning": {
-    "status": "enabled"
-  },
-  "secret_scanning_push_protection": {
-    "status": "enabled"
-  }
-}
-```
-
-### <a name="input_squash_merge_commit_message"></a> [squash\_merge\_commit\_message](#input\_squash\_merge\_commit\_message)
-
-Description: (Optional) Can be PR\_BODY, COMMIT\_MESSAGES, or BLANK for a default squash merge commit message. Applicable only if allow\_squash\_merge is true.
-
-Type: `string`
-
-Default: `"COMMIT_MESSAGES"`
-
-### <a name="input_squash_merge_commit_title"></a> [squash\_merge\_commit\_title](#input\_squash\_merge\_commit\_title)
-
-Description: (Optional) Can be PR\_TITLE or COMMIT\_OR\_PR\_TITLE for a default squash merge commit title. Applicable only if allow\_squash\_merge is true.
-
-Type: `string`
-
-Default: `"COMMIT_OR_PR_TITLE"`
-
-### <a name="input_template"></a> [template](#input\_template)
-
-Description:   (Optional) The template block supports the following:  
-    owner                : (Required) The GitHub organization or user the template repository is owned by.  
-    repository           : (Required) The name of the template repository.  
-    include\_all\_branches : (Optional) Whether the new repository should include all the branches from the template repository (defaults to false, which includes only the default branch from the template).
-
-Type:
-
-```hcl
-object({
-    owner                = string
-    repository           = string
-    include_all_branches = optional(bool, false)
-  })
-```
-
-Default: `null`
-
-### <a name="input_tfe_token"></a> [tfe\_token](#input\_tfe\_token)
-
-Description: (Optional) The TFE\_TOKEN secret value to be created in the GitHub repository to allow the module to publish itself into the private registry.
-
-Type: `string`
-
-Default: `null`
-
-### <a name="input_topics"></a> [topics](#input\_topics)
-
-Description: (Optional) The list of topics of the repository.
-
-Type: `list(string)`
-
-Default: `[]`
-
-### <a name="input_visibility"></a> [visibility](#input\_visibility)
-
-Description: (Optional) Can be public or private. If your organization is associated with an enterprise account using GitHub Enterprise Cloud or GitHub Enterprise Server 2.20+, visibility can also be internal.
-
-Type: `string`
-
-Default: `"public"`
-
-### <a name="input_vulnerability_alerts"></a> [vulnerability\_alerts](#input\_vulnerability\_alerts)
-
-Description: (Optional) Set to true to enable security alerts for vulnerable dependencies. Enabling requires alerts to be enabled on the owner level. (Note for importing: GitHub enables the alerts on public repos but disables them on private repos by default.) See GitHub Documentation for details. Note that vulnerability alerts have not been successfully tested on any GitHub Enterprise instance and may be unavailable in those settings.
-
-Type: `bool`
-
-Default: `true`
+Default: Branch policy on `refs/heads/main` requiring 1 reviewer, comment resolution, and squash/basic merge types.
 
 ## Resources
 
 The following resources are used by this module:
 
-- [github_actions_secret.tfe_token](https://registry.terraform.io/providers/integrations/github/latest/docs/resources/actions_secret) (resource)
-- [github_branch_protection.this](https://registry.terraform.io/providers/integrations/github/latest/docs/resources/branch_protection) (resource)
-- [github_repository.this](https://registry.terraform.io/providers/integrations/github/latest/docs/resources/repository) (resource)
-- [github_team_repository.this](https://registry.terraform.io/providers/integrations/github/latest/docs/resources/team_repository) (resource)
-- [tfe_no_code_module.this](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/no_code_module) (resource)
+- [azuredevops_git_repository.this](https://registry.terraform.io/providers/microsoft/azuredevops/latest/docs/resources/git_repository) (resource, via `module.repository`)
+- [azuredevops_branch_policy_min_reviewers.this](https://registry.terraform.io/providers/microsoft/azuredevops/latest/docs/resources/branch_policy_min_reviewers) (resource, via `module.repository`)
+- [azuredevops_branch_policy_comment_resolution.this](https://registry.terraform.io/providers/microsoft/azuredevops/latest/docs/resources/branch_policy_comment_resolution) (resource, via `module.repository`)
+- [azuredevops_branch_policy_merge_types.this](https://registry.terraform.io/providers/microsoft/azuredevops/latest/docs/resources/branch_policy_merge_types) (resource, via `module.repository`)
+- [azuredevops_branch_policy_auto_reviewers.this](https://registry.terraform.io/providers/microsoft/azuredevops/latest/docs/resources/branch_policy_auto_reviewers) (resource, via `module.repository`)
 - [tfe_registry_module.this](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/registry_module) (resource)
-- [github_team.this](https://registry.terraform.io/providers/integrations/github/latest/docs/data-sources/team) (data source)
+- [tfe_no_code_module.this](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/no_code_module) (resource)
+- [tfe_test_variable.azdo_org_service_url](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/test_variable) (resource)
+- [tfe_test_variable.azdo_personal_access_token](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/test_variable) (resource)
+- [tfe_test_variable.azdo_project_name](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/test_variable) (resource)
+- [tfe_test_variable.oauth_client_name](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/test_variable) (resource)
+- [tfe_test_variable.organization](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/test_variable) (resource)
+- [tfe_test_variable.tfe_token](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/test_variable) (resource)
+- [azuredevops_project.this](https://registry.terraform.io/providers/microsoft/azuredevops/latest/docs/data-sources/project) (data source)
 - [tfe_oauth_client.client](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/data-sources/oauth_client) (data source)
 
 ## Outputs
 
 The following outputs are exported:
 
-### <a name="output_branch_protection"></a> [branch\_protection](#output\_branch\_protection)
+### <a name="output_repository"></a> [repository](#output\_repository)
 
-Description: GitHub branch protection within your GitHub repository.
+Description: Azure DevOps Git repository resource attributes (`id` and `name`).
 
-### <a name="output_full_name"></a> [full\_name](#output\_full\_name)
+### <a name="output_repository_id"></a> [repository\_id](#output\_repository\_id)
 
-Description: A string of the form "orgname/reponame".
+Description: The ID of the Azure DevOps Git repository.
 
-### <a name="output_git_clone_url"></a> [git\_clone\_url](#output\_git\_clone\_url)
+### <a name="output_remote_url"></a> [remote\_url](#output\_remote\_url)
 
-Description: URL that can be provided to git clone to clone the repository anonymously via the git protocol.
+Description: HTTPS clone URL of the repository.
 
-### <a name="output_html_url"></a> [html\_url](#output\_html\_url)
+### <a name="output_ssh_url"></a> [ssh\_url](#output\_ssh\_url)
 
-Description: URL to the repository on the web.
+Description: SSH clone URL of the repository.
 
-### <a name="output_http_clone_url"></a> [http\_clone\_url](#output\_http\_clone\_url)
+### <a name="output_web_url"></a> [web\_url](#output\_web\_url)
 
-Description: URL that can be provided to git clone to clone the repository via HTTPS.
+Description: Web link to the repository.
 
-### <a name="output_node_id"></a> [node\_id](#output\_node\_id)
+### <a name="output_default_branch"></a> [default\_branch](#output\_default\_branch)
 
-Description: GraphQL global node id for use with v4 API.
+Description: The ref of the default branch (e.g., `refs/heads/main`).
 
-### <a name="output_pages"></a> [pages](#output\_pages)
+### <a name="output_branch_policy_min_reviewers"></a> [branch\_policy\_min\_reviewers](#output\_branch\_policy\_min\_reviewers)
 
-Description:   The block consisting of the repository's GitHub Pages configuration with the following additional attributes:  
-    custom\_404 : Whether the rendered GitHub Pages site has a custom 404 page.  
-    html\_url   : The absolute URL (including scheme) of the rendered GitHub Pages site e.g. https://username.github.io.  
-    status     : The GitHub Pages site's build status e.g. building or built.
+Description: Map of minimum-reviewer branch policies keyed by branch ref.
 
-### <a name="output_primary_language"></a> [primary\_language](#output\_primary\_language)
+### <a name="output_branch_policy_comment_resolution"></a> [branch\_policy\_comment\_resolution](#output\_branch\_policy\_comment\_resolution)
 
-Description: The primary language used in the repository.
+Description: Map of comment-resolution branch policies keyed by branch ref.
+
+### <a name="output_branch_policy_merge_types"></a> [branch\_policy\_merge\_types](#output\_branch\_policy\_merge\_types)
+
+Description: Map of merge-types branch policies keyed by branch ref.
 
 ### <a name="output_registry_module_id"></a> [registry\_module\_id](#output\_registry\_module\_id)
 
@@ -593,23 +318,7 @@ Description: The Terraform provider that this module is used for.
 
 ### <a name="output_registry_module_name"></a> [registry\_module\_name](#output\_registry\_module\_name)
 
-Description: The name of registry module.
-
-### <a name="output_repo_id"></a> [repo\_id](#output\_repo\_id)
-
-Description: GitHub ID for the repository.
-
-### <a name="output_repository"></a> [repository](#output\_repository)
-
-Description: Repositories within your GitHub organization.
-
-### <a name="output_ssh_clone_url"></a> [ssh\_clone\_url](#output\_ssh\_clone\_url)
-
-Description: URL that can be provided to git clone to clone the repository via SSH.
-
-### <a name="output_svn_url"></a> [svn\_url](#output\_svn\_url)
-
-Description: URL that can be provided to svn checkout to check out the repository via GitHub's Subversion protocol emulation.
+Description: The name of the registry module.
 
 <!-- markdownlint-enable -->
 <!-- END_TF_DOCS -->

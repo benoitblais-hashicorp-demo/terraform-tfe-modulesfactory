@@ -1,42 +1,74 @@
-provider "github" {
-  app_auth {} # Required when using `GITHUB_APP_XXX` environment variables
+provider "azuredevops" {
+  org_service_url       = "${var.azuredevops_service_url}/${var.azuredevops_organization}"
+  personal_access_token = var.azuredevops_personal_access_token
 }
 
 provider "tfe" {}
 
-run "variables" {
+# ─────────────────────────────────────────────────────────────────────────────
+# Test: invalid values for variables that have validation rules.
+# Each sub-run below triggers exactly the validation(s) listed in expect_failures.
+# ─────────────────────────────────────────────────────────────────────────────
 
-  variables {
-    module_name                 = "Test"
-    module_provider             = "tfe"
-    visibility                  = "Public"
-    squash_merge_commit_title   = "PR_Title"
-    squash_merge_commit_message = null
-    merge_commit_title          = null
-    merge_commit_message        = "PR_Body"
-    security_and_analysis = {
-      advanced_security = {
-        status = null
-      }
-      secret_scanning = {
-        status = "Enabled"
-      }
-      secret_scanning_push_protection = {
-        status = "enabled"
-      }
-    }
-  }
+# --- initialization.init_type ------------------------------------------------
+
+run "variables_initialization_invalid_init_type" {
 
   command = plan
 
+  variables {
+    module_name     = "test"
+    module_provider = "azurerm"
+    initialization = {
+      init_type  = "BadType"
+      source_url = null
+    }
+  }
+
   expect_failures = [
-    var.visibility,
-    var.squash_merge_commit_title,
-    var.squash_merge_commit_message,
-    var.merge_commit_title,
-    var.merge_commit_message,
-    var.security_and_analysis.advanced_security.status,
-    var.security_and_analysis.secret_scanning.status,
+    var.initialization,
+  ]
+
+}
+
+run "variables_initialization_import_missing_source_url" {
+
+  command = plan
+
+  variables {
+    module_name     = "test"
+    module_provider = "azurerm"
+    initialization = {
+      init_type  = "Import"
+      source_url = null
+    }
+  }
+
+  expect_failures = [
+    var.initialization,
+  ]
+
+}
+
+# --- branch_policies[*].match_type -------------------------------------------
+
+run "variables_branch_policies_invalid_match_type" {
+
+  command = plan
+
+  variables {
+    module_name     = "test"
+    module_provider = "azurerm"
+    branch_policies = [
+      {
+        branch_ref = "refs/heads/main"
+        match_type = "InvalidMatchType"
+      }
+    ]
+  }
+
+  expect_failures = [
+    var.branch_policies,
   ]
 
 }

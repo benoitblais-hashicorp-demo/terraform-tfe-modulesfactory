@@ -1,5 +1,6 @@
-provider "github" {
-  app_auth {} # Required when using `GITHUB_APP_XXX` environment variables
+provider "azuredevops" {
+  org_service_url       = "${var.azuredevops_service_url}/${var.azuredevops_organization}"
+  personal_access_token = var.azuredevops_personal_access_token
 }
 
 provider "tfe" {}

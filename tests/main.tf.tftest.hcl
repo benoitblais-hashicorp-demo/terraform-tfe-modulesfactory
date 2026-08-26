@@ -1,90 +1,72 @@
-provider "github" {
-  app_auth {} # Required when using `GITHUB_APP_XXX` environment variables
+provider "azuredevops" {
+  org_service_url       = "${var.azuredevops_service_url}/${var.azuredevops_organization}"
+  personal_access_token = var.azuredevops_personal_access_token
 }
 
 provider "tfe" {}
 
-run "main_failed_security_and_analysis" {
+# ─────────────────────────────────────────────
+# Shared mock variables required by every run.
+# Set via environment variables in HCP Terraform:
+#   TF_VAR_azuredevops_organization
+#   TF_VAR_azuredevops_project_name
+#   AZDO_PERSONAL_ACCESS_TOKEN  (or TF_VAR_azuredevops_personal_access_token)
+#   TF_VAR_organization
+#   TF_VAR_oauth_client_name
+#   TFE_TOKEN  (or TF_VAR_tfe_token)
+# ─────────────────────────────────────────────
 
-  command = plan
-
-  variables {
-    module_name     = "test"
-    module_provider = "tfe"
-    security_and_analysis = {
-      advanced_security = {
-        status = "enabled"
-      }
-      secret_scanning = {
-        status = "enabled"
-      }
-      secret_scanning_push_protection = {
-        status = "enabled"
-      }
-    }
-  }
-
-  expect_failures = [github_repository.this]
-
+variables {
+  module_name     = "test"
+  module_provider = "azurerm"
 }
+
+# ─────────────────────────────────────────────
+# Run: apply and verify all key outputs.
+# ─────────────────────────────────────────────
 
 run "main_passed" {
 
   command = apply
 
-  variables {
-    module_name     = "test"
-    module_provider = "tfe"
+  assert {
+    condition     = output.repository != null
+    error_message = "`repository` output should not be null."
   }
 
   assert {
-    condition     = output.repository != ""
-    error_message = "`repository` ouput should not be empty."
+    condition     = output.repository_id != null && output.repository_id != ""
+    error_message = "`repository_id` output should not be empty."
   }
 
   assert {
-    condition     = can(regex("^.+/.+$", output.full_name))
-    error_message = "`full_name` output should follow pattern \"organization_name/repository_name\"."
+    condition     = can(regex("^https://", output.remote_url))
+    error_message = "`remote_url` output should start with \"https://\"."
   }
 
   assert {
-    condition     = can(regex("^https://github.com/.+/.+$", output.html_url))
-    error_message = "`html_url` output should follow pattern \"https://github.com/organization_name/repository_name\"."
+    condition     = can(regex("^https://", output.web_url))
+    error_message = "`web_url` output should start with \"https://\"."
   }
 
   assert {
-    condition     = can(regex("^git@github.com:.+/.+\\.git$", output.ssh_clone_url))
-    error_message = "`ssh_clone_url` output should follow pattern \"git@github.com:organization_name/repository_name.git\"."
+    condition     = can(regex("^refs/heads/", output.default_branch))
+    error_message = "`default_branch` output should follow pattern \"refs/heads/<branch>\"."
   }
 
   assert {
-    condition     = can(regex("^https://github.com/.+/.+\\.git$", output.http_clone_url))
-    error_message = "`http_clone_url` output should follow pattern \"https://github.com/organization_name/repository_name.git\"."
-  }
-
-  assert {
-    condition     = can(regex("^git://github.com/.+/.+\\.git$", output.git_clone_url))
-    error_message = "`git_clone_url` output should follow pattern git://github.com/organization_name/repository_name.git."
-  }
-
-  assert {
-    condition     = can(regex("^https://github.com/.+/.+$", output.svn_url))
-    error_message = "`svn_url` output should follow pattern \"https://github.com/organization_name/repository_name\"."
-  }
-
-  assert {
-    condition     = output.node_id != ""
-    error_message = "`node_id` output should not be empty."
-  }
-
-  assert {
-    condition     = output.repo_id != ""
-    error_message = "`repo_id` output should not be empty."
-  }
-
-  assert {
-    condition     = output.registry_module_id != ""
+    condition     = output.registry_module_id != null && output.registry_module_id != ""
     error_message = "`registry_module_id` output should not be empty."
+  }
+
+  assert {
+    condition     = output.registry_module_name != null && output.registry_module_name != ""
+    error_message = "`registry_module_name` output should not be empty."
+  }
+
+  assert {
+    condition     = output.registry_module_module_provider != null && output.registry_module_module_provider != ""
+    error_message = "`registry_module_module_provider` output should not be empty."
   }
 
 }

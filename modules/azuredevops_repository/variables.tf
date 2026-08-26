@@ -1,115 +1,14 @@
-variable "module_name" {
-  description = "(Required) The name of the Terraform module."
+variable "name" {
+  description = "(Required) The name of the repository."
   type        = string
   nullable    = false
 }
 
-variable "module_provider" {
-  description = "(Required) The main provider the module uses (e.g., `azurerm`, `aws`)."
+variable "project_id" {
+  description = "(Required) The ID or name of the Azure DevOps project in which the repository will be created."
   type        = string
   nullable    = false
 }
-
-variable "azuredevops_organization" {
-  description = "(Required) The name of the Azure DevOps organization (the segment after `dev.azure.com/` in the URL). Used to build the VCS identifier for HCP Terraform."
-  type        = string
-  nullable    = false
-}
-
-variable "azuredevops_personal_access_token" {
-  description = "(Required) The Azure DevOps Personal Access Token used to authenticate. Can also be set via the AZDO_PERSONAL_ACCESS_TOKEN environment variable."
-  type        = string
-  nullable    = false
-  sensitive   = true
-}
-
-variable "azuredevops_project_name" {
-  description = "(Required) The name of the Azure DevOps project in which the repository will be created. Used to look up the project UUID at plan time."
-  type        = string
-  nullable    = false
-}
-
-variable "organization" {
-  description = "(Required) HCP Terraform organization name."
-  type        = string
-  nullable    = false
-
-  validation {
-    condition     = var.organization != null ? true : false
-    error_message = "`organization` must be specified to be able to publish a module into the private registry."
-  }
-}
-
-variable "tfe_token" {
-  description = "(Required) HCP Terraform API token used by child workspaces to publish modules into the private registry."
-  type        = string
-  nullable    = false
-  sensitive   = true
-}
-
-variable "oauth_client_name" {
-  description = "(Required) Name of the OAuth client connecting HCP Terraform to Azure DevOps."
-  type        = string
-  nullable    = false
-
-  validation {
-    condition     = var.oauth_client_name != null ? true : false
-    error_message = "`oauth_client_name` must be specified to be able to publish a module into the private registry."
-  }
-}
-
-variable "azuredevops_service_url" {
-  description = "(Optional) The base URL of the Azure DevOps service. Defaults to `https://dev.azure.com`. The full organization URL is constructed automatically as `<azuredevops_service_url>/<azuredevops_organization>`."
-  type        = string
-  nullable    = false
-  default     = "https://dev.azure.com"
-}
-
-variable "default_branch" {
-  description = "(Optional) The short name of the default branch (without the `refs/heads/` prefix). Defaults to `main`."
-  type        = string
-  nullable    = false
-  default     = "main"
-}
-
-variable "disabled" {
-  description = "(Optional) Whether the repository is disabled. Defaults to `false`."
-  type        = bool
-  default     = false
-}
-
-variable "initialization" {
-  description = <<EOT
-  (Optional) Repository initialization configuration:
-    init_type  : (Required) How to initialize the repository. Valid values: `Clean`, `Uninitialized`, `Import`.
-    source_url : (Optional) URL of the source Git repository when `init_type` is `Import`.
-  EOT
-  type = object({
-    init_type  = string
-    source_url = optional(string, null)
-  })
-  default = {
-    init_type  = "Clean"
-    source_url = null
-  }
-
-  validation {
-    condition     = contains(["Clean", "Uninitialized", "Import"], var.initialization.init_type)
-    error_message = "Valid values for `init_type` are \"Clean\", \"Uninitialized\", or \"Import\"."
-  }
-  validation {
-    condition     = var.initialization.init_type == "Import" ? var.initialization.source_url != null : true
-    error_message = "`source_url` is required when `init_type` is \"Import\"."
-  }
-}
-
-variable "no_code_module" {
-  description = "(Optional) Whether this module will be a no-code module."
-  type        = bool
-  default     = false
-}
-
-# The following variable is used to configure branch policies for the repository.
 
 variable "branch_policies" {
   description = <<EOT
@@ -192,5 +91,43 @@ variable "branch_policies" {
   validation {
     condition     = alltrue([for bp in var.branch_policies : contains(["Exact", "Prefix", "DefaultBranch"], bp.match_type)])
     error_message = "Valid values for `match_type` are \"Exact\", \"Prefix\", or \"DefaultBranch\"."
+  }
+}
+
+variable "default_branch" {
+  description = "(Optional) The short name of the default branch (without the `refs/heads/` prefix). Defaults to `main`."
+  type        = string
+  nullable    = false
+  default     = "main"
+}
+
+variable "disabled" {
+  description = "(Optional) Whether the repository is disabled. Defaults to `false`."
+  type        = bool
+  default     = false
+}
+
+variable "initialization" {
+  description = <<EOT
+  (Required) Repository initialization configuration:
+    init_type  : (Required) How to initialize the repository. Valid values: `Clean`, `Uninitialized`, `Import`.
+    source_url : (Optional) URL of the source Git repository when `init_type` is `Import`.
+  EOT
+  type = object({
+    init_type  = string
+    source_url = optional(string, null)
+  })
+  default = {
+    init_type  = "Clean"
+    source_url = null
+  }
+
+  validation {
+    condition     = contains(["Clean", "Uninitialized", "Import"], var.initialization.init_type)
+    error_message = "Valid values for `init_type` are \"Clean\", \"Uninitialized\", or \"Import\"."
+  }
+  validation {
+    condition     = var.initialization.init_type == "Import" ? var.initialization.source_url != null : true
+    error_message = "`source_url` is required when `init_type` is \"Import\"."
   }
 }
