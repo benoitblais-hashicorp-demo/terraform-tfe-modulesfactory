@@ -11,20 +11,13 @@ variable "module_provider" {
 }
 
 variable "azuredevops_organization" {
-  description = "(Required) The name of the Azure DevOps organization (the segment after `dev.azure.com/` in the URL). Used to build the VCS identifier for HCP Terraform."
+  description = "(Required) The name of the Azure DevOps organization (the segment after `dev.azure.com/` in the URL, e.g. `ConseilsTI`)."
   type        = string
   nullable    = false
 }
 
-variable "azuredevops_personal_access_token" {
-  description = "(Required) The Azure DevOps Personal Access Token used to authenticate. Can also be set via the AZDO_PERSONAL_ACCESS_TOKEN environment variable."
-  type        = string
-  nullable    = false
-  sensitive   = true
-}
-
-variable "azuredevops_project_name" {
-  description = "(Required) The name of the Azure DevOps project in which the repository will be created. Used to look up the project UUID at plan time."
+variable "azdo_project_name" {
+  description = "(Required) Name of the Azure DevOps project where the repository will be created."
   type        = string
   nullable    = false
 }
@@ -40,15 +33,8 @@ variable "organization" {
   }
 }
 
-variable "tfe_token" {
-  description = "(Required) HCP Terraform API token used by child workspaces to publish modules into the private registry."
-  type        = string
-  nullable    = false
-  sensitive   = true
-}
-
 variable "oauth_client_name" {
-  description = "(Required) Name of the OAuth client connecting HCP Terraform to Azure DevOps."
+  description = "(Required) Name of the OAuth client connecting HCP Terraform to Azure DevOps (e.g., `AzureDevOps`). Found in HCP Terraform UI: Organization Settings → VCS Providers."
   type        = string
   nullable    = false
 
@@ -56,13 +42,6 @@ variable "oauth_client_name" {
     condition     = var.oauth_client_name != null ? true : false
     error_message = "`oauth_client_name` must be specified to be able to publish a module into the private registry."
   }
-}
-
-variable "azuredevops_service_url" {
-  description = "(Optional) The base URL of the Azure DevOps service. Defaults to `https://dev.azure.com`. The full organization URL is constructed automatically as `<azuredevops_service_url>/<azuredevops_organization>`."
-  type        = string
-  nullable    = false
-  default     = "https://dev.azure.com"
 }
 
 variable "default_branch" {

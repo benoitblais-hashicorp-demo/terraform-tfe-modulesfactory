@@ -8,8 +8,8 @@ of your Terraform modules using Azure DevOps as the VCS provider.
 
 ### Azure DevOps Permissions
 
-To manage Azure DevOps resources, provide a Personal Access Token (PAT) from an account
-with appropriate permissions on the target project. The PAT should have:
+The Azure DevOps provider authenticates via the `AZDO_PERSONAL_ACCESS_TOKEN`
+environment variable. The PAT must have:
 
 * **Code** — Read & Write (to create and manage Git repositories)
 * **Project and Team** — Read (to look up the project UUID)
@@ -24,32 +24,17 @@ Alternatively, you can use a token from a team instead of a user token.
 
 ### Azure DevOps Authentication
 
-The Azure DevOps provider requires a Personal Access Token (PAT) to manage resources.
+The `azuredevops` provider reads its credentials entirely from environment variables.
+No credentials are passed as Terraform variables:
 
-There are several ways to provide the required token:
-
-* Set the `personal_access_token` argument via the `azuredevops_personal_access_token`
-  input variable in the module call.
-* Set the `AZDO_PERSONAL_ACCESS_TOKEN` environment variable. The provider reads this
-  variable automatically, so the input variable can be omitted when it is set.
-
-The organization service URL is constructed automatically from the
-`azuredevops_service_url` and `azuredevops_organization` input variables:
-
-```
-https://dev.azure.com/<azuredevops_organization>
-```
+* `AZDO_ORG_SERVICE_URL` — full organization URL, e.g. `https://dev.azure.com/my-org`
+* `AZDO_PERSONAL_ACCESS_TOKEN` — Personal Access Token with Code and Project read permissions
 
 ### HCP Terraform Authentication
 
-The HCP Terraform provider requires a HCP Terraform/Terraform Enterprise API token in
-order to manage resources.
+The `tfe` provider reads its token from:
 
-There are several ways to provide the required token:
-
-* Set the `tfe_token` input variable in the module call.
-* Set the `TFE_TOKEN` environment variable. The provider reads the `TFE_TOKEN`
-  environment variable and the token stored there to authenticate.
+* `TFE_TOKEN` — HCP Terraform API token
 
 ## Features
 
@@ -58,7 +43,7 @@ There are several ways to provide the required token:
 * Publish the module inside the private registry of your HCP Terraform organization.
   * Enable the no-code feature when specified.
 * Automatically provision `tfe_test_variable` resources so that HCP Terraform module tests
-  have access to the required Azure DevOps credentials.
+  have access to the required credentials via the workspace variable set.
 
 ## Usage example
 
@@ -71,15 +56,13 @@ module "modulesfactory" {
   module_name     = "storage-account"
   module_provider = "azurerm"
 
-  # Azure DevOps VCS connection
-  azuredevops_organization          = "my-ado-org"
-  azuredevops_project_name          = "My ADO Project"
-  azuredevops_personal_access_token = var.ado_pat   # or use AZDO_PERSONAL_ACCESS_TOKEN env var
+  # Azure DevOps (credentials come from AZDO_* env vars)
+  azuredevops_organization = "ConseilsTI"
+  azdo_project_name = "My ADO Project"
 
   # HCP Terraform
-  organization       = "my-hcp-org"
-  oauth_client_name  = "AzureDevOps"
-  tfe_token          = var.tfe_token                 # or use TFE_TOKEN env var
+  organization      = "my-hcp-org"
+  oauth_client_name = "AzureDevOps"   # Organization Settings -> VCS Providers
 }
 ```
 
@@ -123,19 +106,13 @@ Type: `string`
 
 ### <a name="input_azuredevops_organization"></a> [azuredevops\_organization](#input\_azuredevops\_organization)
 
-Description: (Required) The name of the Azure DevOps organization (the segment after `dev.azure.com/` in the URL).
+Description: (Required) The name of the Azure DevOps organization (the segment after `dev.azure.com/` in the URL, e.g. `ConseilsTI`).
 
 Type: `string`
 
-### <a name="input_azuredevops_personal_access_token"></a> [azuredevops\_personal\_access\_token](#input\_azuredevops\_personal\_access\_token)
+### <a name="input_azdo_project_name"></a> [azdo\_project\_name](#input\_azdo\_project\_name)
 
-Description: (Required) The Azure DevOps Personal Access Token used to authenticate. Can also be set via the `AZDO_PERSONAL_ACCESS_TOKEN` environment variable.
-
-Type: `string` (sensitive)
-
-### <a name="input_azuredevops_project_name"></a> [azuredevops\_project\_name](#input\_azuredevops\_project\_name)
-
-Description: (Required) The name of the Azure DevOps project in which the repository will be created.
+Description: (Required) Name of the Azure DevOps project where the repository will be created.
 
 Type: `string`
 
@@ -145,29 +122,15 @@ Description: (Required) HCP Terraform organization name.
 
 Type: `string`
 
-### <a name="input_tfe_token"></a> [tfe\_token](#input\_tfe\_token)
-
-Description: (Required) HCP Terraform API token used by child workspaces to publish modules into the private registry.
-
-Type: `string` (sensitive)
-
 ### <a name="input_oauth_client_name"></a> [oauth\_client\_name](#input\_oauth\_client\_name)
 
-Description: (Required) Name of the OAuth client connecting HCP Terraform to Azure DevOps.
+Description: (Required) Name of the OAuth client connecting HCP Terraform to Azure DevOps (e.g., `AzureDevOps`). Found in HCP Terraform UI: Organization Settings -> VCS Providers.
 
 Type: `string`
 
 ## Optional Inputs
 
 The following input variables are optional (have default values):
-
-### <a name="input_azuredevops_service_url"></a> [azuredevops\_service\_url](#input\_azuredevops\_service\_url)
-
-Description: (Optional) The base URL of the Azure DevOps service. Defaults to `https://dev.azure.com`.
-
-Type: `string`
-
-Default: `"https://dev.azure.com"`
 
 ### <a name="input_default_branch"></a> [default\_branch](#input\_default\_branch)
 
@@ -260,11 +223,10 @@ The following resources are used by this module:
 - [tfe_registry_module.this](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/registry_module) (resource)
 - [tfe_no_code_module.this](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/no_code_module) (resource)
 - [tfe_test_variable.azdo_org_service_url](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/test_variable) (resource)
-- [tfe_test_variable.azdo_personal_access_token](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/test_variable) (resource)
+- [tfe_test_variable.azuredevops_organization](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/test_variable) (resource)
 - [tfe_test_variable.azdo_project_name](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/test_variable) (resource)
 - [tfe_test_variable.oauth_client_name](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/test_variable) (resource)
 - [tfe_test_variable.organization](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/test_variable) (resource)
-- [tfe_test_variable.tfe_token](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/test_variable) (resource)
 - [azuredevops_project.this](https://registry.terraform.io/providers/microsoft/azuredevops/latest/docs/data-sources/project) (data source)
 - [tfe_oauth_client.client](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/data-sources/oauth_client) (data source)
 
